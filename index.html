@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>門板精密配置計算器</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; color: #333; }
+        .container { max-width: 500px; margin: auto; padding-top: 10px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h2 { text-align: center; color: #1a73e8; margin: 0 0 15px 0; font-size: 1.3em; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .spec-box { padding: 15px; border-radius: 10px; border: 2px solid #eee; background: #fff; text-align: center; }
+        .spec-name { font-weight: bold; font-size: 1.1em; color: #1a73e8; display: block; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+        .res-item { margin-bottom: 10px; }
+        .val-label { font-size: 0.75em; color: #777; display: block; }
+        .val-num { font-size: 1.15em; font-weight: bold; color: #333; }
+        .highlight-num { color: #2c3e50; font-size: 1.3em; border-top: 1px dashed #ddd; margin-top: 5px; padding-top: 5px; }
+        .status { font-size: 0.85em; padding: 6px; border-radius: 6px; font-weight: bold; margin-top: 10px; }
+        .ok { color: #188038; background: #e6f4ea; border: 1px solid #188038; }
+        .fail { color: #d93025; background: #fce8e6; border: 1px solid #d93025; }
+        .info-txt { font-size: 0.8em; color: #666; margin-top: 10px; text-align: center; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>門板規格精密計算</h2>
+        <div class="input-group">
+            <label>門面總高度 (mm)</label>
+            <input type="number" id="doorFaceH" placeholder="輸入高度" value="2300" oninput="run()">
+        </div>
+        <div class="info-txt">
+            固定：間隙 92mm (含橫料) | 頂橫料 70mm<br>
+            底座：50~250mm | 覆蓋量：+35~100mm
+        </div>
+    </div>
+
+    <div class="comparison">
+        <div class="card spec-box">
+            <span class="spec-name">立料 452mm</span>
+            <div class="res-item">
+                <span class="val-label">所需片數</span>
+                <span class="val-num" id="n452">-</span>
+            </div>
+            <div class="res-item">
+                <span class="val-label">底座高度</span>
+                <span class="val-num" id="b452">-</span>
+            </div>
+            <div class="res-item">
+                <span class="val-label">門板總高度</span>
+                <span class="val-num highlight-num" id="total452">-</span>
+            </div>
+            <div class="res-item">
+                <span class="val-label">覆蓋門面量</span>
+                <span class="val-num" id="c452">-</span>
+            </div>
+            <div id="s452" class="status">計算中</div>
+        </div>
+
+        <div class="card spec-box">
+            <span class="spec-name">立料 398mm</span>
+            <div class="res-item">
+                <span class="val-label">所需片數</span>
+                <span class="val-num" id="n398">-</span>
+            </div>
+            <div class="res-item">
+                <span class="val-label">底座高度</span>
+                <span class="val-num" id="b398">-</span>
+            </div>
+            <div class="res-item">
+                <span class="val-label">門板總高度</span>
+                <span class="val-num highlight-num" id="total398">-</span>
+            </div>
+            <div class="res-item">
+                <span class="val-label">覆蓋門面量</span>
+                <span class="val-num" id="c398">-</span>
+            </div>
+            <div id="s398" class="status">計算中</div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.onload = run;
+
+function run() {
+    const faceH = parseFloat(document.getElementById('doorFaceH').value);
+    const G = 92; 
+    const topRail = 70; 
+    const tMin = 35; 
+    const tMax = 100;
+
+    if (isNaN(faceH) || faceH <= 0) return;
+
+    calculate(452, faceH, G, topRail, tMin, tMax, '452');
+    calculate(398, faceH, G, topRail, tMin, tMax, '398');
+}
+
+function calculate(spec, faceH, G, T, tMin, tMax, id) {
+    let n = Math.ceil((faceH + tMin - 50 + G - T) / (spec + G));
+    
+    let currentTotal = (n * spec) + ((n - 1) * G) + T + 50;
+    let cover = currentTotal - faceH;
+    let bottom = 50;
+
+    if (cover < tMin) {
+        let diff = tMin - cover;
+        bottom += diff;
+        cover += diff;
+        currentTotal = (n * spec) + ((n - 1) * G) + T + bottom;
+    }
+
+    if (cover > tMax) {
+        let n_minus = n - 1;
+        if (n_minus > 0) {
+            let total_minus = (n_minus * spec) + ((n_minus - 1) * G) + T + 50;
+            let cover_minus = total_minus - faceH;
+            let diff_needed = tMin - cover_minus;
+            if (50 + diff_needed <= 250) {
+                n = n_minus;
+                bottom = 50 + diff_needed;
+                currentTotal = (n * spec) + ((n - 1) * G) + T + bottom;
+                cover = currentTotal - faceH;
+            }
+        }
+    }
+
+    document.getElementById('total' + id).innerText = Math.round(currentTotal) + " mm";
+    document.getElementById('n' + id).innerText = n + " 片";
+    document.getElementById('b' + id).innerText = Math.round(bottom) + " mm";
+    document.getElementById('c' + id).innerText = "+" + Math.round(cover) + " mm";
+
+    const sEl = document.getElementById('s' + id);
+    if (cover >= tMin && cover <= tMax && bottom <= 250) {
+        sEl.innerText = "符合標準";
+        sEl.className = "status ok";
+    } else {
+        sEl.innerText = (bottom > 250) ? "底座過高" : (cover > tMax ? "覆蓋過多" : "不符要求");
+        sEl.className = "status fail";
+    }
+}
+</script>
+
+</body>
+</html>
